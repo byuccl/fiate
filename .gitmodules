@@ -13,3 +13,6 @@
 [submodule "duts/vex/scala/VexRiscv"]
 	path = duts/vex/scala/VexRiscv
 	url = https://github.com/SpinalHDL/VexRiscv.git
+[submodule "duts/pico/picorv32"]
+	path = duts/pico/picorv32
+	url = https://github.com/cliffordwolf/picorv32.git
