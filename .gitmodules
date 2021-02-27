@@ -10,3 +10,6 @@
 [submodule "SpyDrNet/spydrnet-shrec"]
 	path = SpyDrNet/spydrnet-shrec
 	url = https://github.com/byuccl/spydrnet-shrec.git
+[submodule "duts/vex/scala/VexRiscv"]
+	path = duts/vex/scala/VexRiscv
+	url = https://github.com/SpinalHDL/VexRiscv.git
