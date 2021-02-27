@@ -1,3 +1,12 @@
 [submodule "duts/riscv_sw/soft_riscv"]
 	path = duts/riscv_sw/soft_riscv
 	url = https://github.com/AEW2015/soft_riscv.git
+[submodule "host_sw/pypci"]
+	path = host_sw/pypci
+	url = https://github.com/AEW2015/pypci.git
+[submodule "SpyDrNet/spydrnet"]
+	path = SpyDrNet/spydrnet
+	url = https://github.com/byuccl/spydrnet.git
+[submodule "SpyDrNet/spydrnet-shrec"]
+	path = SpyDrNet/spydrnet-shrec
+	url = https://github.com/byuccl/spydrnet-shrec.git
