@@ -1,0 +1,3 @@
+[submodule "duts/riscv_sw/soft_riscv"]
+	path = duts/riscv_sw/soft_riscv
+	url = https://github.com/AEW2015/soft_riscv.git
