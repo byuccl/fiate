@@ -10,3 +10,6 @@ duts/vex/vex_prj/
 hd_visual/
 static/static_prj/
 duts/pico/pico_prj/
+tight_setup_hold_pins.txt
+duts/kron/kron_prj/
+duts/taiga/taiga_prj/

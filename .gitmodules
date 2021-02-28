@@ -16,3 +16,9 @@
 [submodule "duts/pico/picorv32"]
 	path = duts/pico/picorv32
 	url = https://github.com/cliffordwolf/picorv32.git
+[submodule "duts/taiga/Taiga"]
+	path = duts/taiga/Taiga
+	url = https://gitlab.com/sfu-rcl/Taiga.git
+[submodule "duts/kron/kronos"]
+	path = duts/kron/kronos
+	url = https://github.com/SonalPinto/kronos.git
