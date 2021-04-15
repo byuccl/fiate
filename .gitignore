@@ -1,5 +1,4 @@
 *.html
-*.xml
 __pycache__/
 *.bin
 *.bit
