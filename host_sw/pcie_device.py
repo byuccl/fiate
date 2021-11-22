@@ -7,7 +7,7 @@ from xvc import *
 from xsdb_tcl_server import *
 from microblaze import *
 import pypci
-
+from pathlib import Path
 
 
 class Pcie_Device:
@@ -17,30 +17,31 @@ class Pcie_Device:
         "ddr"          : 0x10000,
         "mdm"          : 0x20000,
         "icap"         : 0x30000,
-        "qspi"         : 0x40000,
+        "qspi"          : 0x40000,
         "xadc"         : 0x50000,
         "gpio"         : 0x70000
         }
     tcl_client = xsdb_tcl_server()
 
-    def __init__(self,device_id,device_info,ip='127.0.0.1'):
+    def __init__(self,device_id,device_info,dut_name,elf_name,ip='127.0.0.1'):
         self.device_id = device_id
         self.device_info = device_info
         self.ip = ip
+        self.elf = elf_name
+        self.dut = dut_name
         self.port = 4000+self.device_id
-        self.files = []
-        self.files.append("log/good/device{0}_taiga_tmr_pb0_good.log".format(self.device_id))
-        self.files.append("log/bad/device{0}_taiga_tmr_pb0_bad.log".format(self.device_id))
-        self.files.append("log/good/device{0}_taiga_tmr_pb1_good.log".format(self.device_id))
-        self.files.append("log/bad/device{0}_taiga_tmr_pb1_bad.log".format(self.device_id))
-        self.files.append("log/good/device{0}_taiga_tmr_pb2_good.log".format(self.device_id))
-        self.files.append("log/bad/device{0}_taiga_tmr_pb2_bad.log".format(self.device_id))
+        #self.rescan()
+        #self.QSPI = QSPI(self.device_info.bar[0].addr,self.address_space["qspi"])
+        
+        #return
+        
+
         self.MicroBlaze = MicroBlaze(self.tcl_client,self.ip,self.port)
         
         self.rescan()
         
         self.QSPI = QSPI(self.device_info.bar[0].addr,self.address_space["qspi"])
-        
+
         self.ICAP = ICAP(self.device_info.bar[0].addr,self.address_space["icap"])
         time.sleep(10.0)
         self.rescan()
@@ -54,11 +55,11 @@ class Pcie_Device:
         
         self.DDR = DDR(self.device_info.bar[0].addr,self.address_space["ddr"],self.address_space["gpio"])
         
-        if (self.DDR.write_file(0x88000000,'taiga_tmr_pb0.bin',1)):
+        if (self.DDR.write_file(0x88000000,dut_name+'_pb0.bin',1)):
             self.isAlive = 0
             return
-        self.DDR.write_file(0x88400000,'taiga_tmr_pb1.bin',1)
-        self.DDR.write_file(0x88800000,'taiga_tmr_pb2.bin',1)
+        self.DDR.write_file(0x88400000,dut_name+'_pb1.bin',1)
+        self.DDR.write_file(0x88800000,dut_name+'_pb2.bin',1)
         
         self.DDR.write(0x80000000,self.device_id)
         self.DDR.write(0x80000100,0x00000000)
@@ -81,7 +82,17 @@ class Pcie_Device:
         
         
         
-        self.MicroBlaze.dow("injection.elf")
+        Path("log/"+dut_name).mkdir(parents=True, exist_ok=True)
+        Path("log/"+dut_name+"/good").mkdir(parents=True, exist_ok=True)
+        Path("log/"+dut_name+"/bad").mkdir(parents=True, exist_ok=True)
+        self.files = []
+        self.files.append("log/{1}/good/device{0}_{1}_pb0_good.log".format(self.device_id,dut_name))
+        self.files.append("log/{1}/bad/device{0}_{1}_pb0_bad.log".format(self.device_id,dut_name))
+        self.files.append("log/{1}/good/device{0}_{1}_pb1_good.log".format(self.device_id,dut_name))
+        self.files.append("log/{1}/bad/device{0}_{1}_pb1_bad.log".format(self.device_id,dut_name))
+        self.files.append("log/{1}/good/device{0}_{1}_pb2_good.log".format(self.device_id,dut_name))
+        self.files.append("log/{1}/bad/device{0}_{1}_pb2_bad.log".format(self.device_id,dut_name))
+        self.MicroBlaze.dow(elf_name)
         self.MicroBlaze.get_status()
         
 
@@ -111,11 +122,19 @@ class Pcie_Device:
         self.device_info = devices[self.device_id]
         
     def log(self):
-        print(self.device_id)
+        #print(self.device_id)
+        good_count = [0,0,0]
+        bad_count = [0,0,0]
         if (self.isAlive):
+            #err,data= self.MicroBlaze.mb_read(0x90000004)
+            #print(err,data)
+            #err,data= self.MicroBlaze.mb_read(0xA0000004)
+            #print(err,data)
+            #err,data= self.MicroBlaze.mb_read(0xB0000004)
+            #print(err,data)
             err,data = self.MicroBlaze.mb_read(0x80000100,4)
             if (not err):
-                print(data)
+                #print(data)
                 
                 new_count = int(data[0],16)
                 
@@ -124,31 +143,37 @@ class Pcie_Device:
                 else:
                     self.same_count = 0
                 while(self.inject_count<new_count):
-                    print(self.inject_count)
+                    #print(self.inject_count)
                     err,data = self.MicroBlaze.mb_read(0x84000000+4*12*self.inject_count,12)
                     if (not err):
-                        print(data)
+                        #print(data)
                         
                         if (int(data[0],16) == 0):
                             self.write_log(self.files[0],data[1:4])
+                            good_count [0] += 1
                         elif (int(data[0],16) == 1):
                             self.write_log(self.files[1],data[1:4])
+                            bad_count [0] += 1
                         else:
                             err = 1
                             break
                             
                         if (int(data[4],16) == 0):
                             self.write_log(self.files[2],data[5:8])
+                            good_count [1] += 1
                         elif (int(data[4],16) == 1):
                             self.write_log(self.files[3],data[5:8])
+                            bad_count [1] += 1
                         else:
                             err = 1
                             break
                             
                         if (int(data[8],16) == 0):
                             self.write_log(self.files[4],data[9:12])
+                            good_count [2] += 1
                         elif (int(data[8],16) == 1):
                             self.write_log(self.files[5],data[9:12])
+                            bad_count [2] += 1
                         else:
                             err = 1
                             break
@@ -168,11 +193,11 @@ class Pcie_Device:
                 self.rescan()
                 self.XVC.start_server()
                 self.XADC.reset()
-                if (self.DDR.write_file(0x88000000,'taiga_tmr_pb0.bin',1)):
+                if (self.DDR.write_file(0x88000000,self.dut+'_pb0.bin',1)):
                     self.isAlive = 0
-                    return
-                self.DDR.write_file(0x88400000,'taiga_tmr_pb1.bin',1)
-                self.DDR.write_file(0x88800000,'taiga_tmr_pb2.bin',1)
+                    return [good_count,bad_count]
+                self.DDR.write_file(0x88400000,self.dut+'_pb1.bin',1)
+                self.DDR.write_file(0x88800000,self.dut+'_pb2.bin',1)
             
                 self.DDR.write(0x80000000,self.device_id)
                 self.DDR.write(0x80000100,0x00000000)
@@ -195,9 +220,11 @@ class Pcie_Device:
                 self.inject_count = 0
                 self.same_count = 0
                 #err,data = pd.MicroBlaze.mb_read(0x80000100)
-                self.MicroBlaze.dow("injection.elf")
+                self.MicroBlaze.dow(self.elf)
         else:
             print("is Dead!")
+            
+        return [good_count,bad_count]
 
     def write_log(self,file,data):
         f=open(file, "a+")
